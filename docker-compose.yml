@@ -1,0 +1,85 @@
+services:
+  auth-db:
+    image: mysql:8.4
+    container_name: auth-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - "3306:3306"
+    volumes:
+      - auth-db-data:/var/lib/mysql
+      - ./auth-service/sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: dockerfile
+    container_name: auth-service
+    environment:
+      PORT: ${AUTH_SERVICE_PORT}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      ACCESS_TOKEN_EXPIRES_IN: ${ACCESS_TOKEN_EXPIRES_IN}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN}
+      USER_SERVICE_URL: ${USER_SERVICE_URL}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-db
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: dockerfile
+    container_name: user-service
+    environment:
+      PORT: ${USER_SERVICE_PORT}
+      DB_HOST: ${USER_DB_HOST}
+      DB_PORT: ${USER_DB_PORT}
+      DB_USER: ${USER_DB_USER}
+      DB_PASSWORD: ${USER_DB_PASSWORD}
+      DB_NAME: ${USER_DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "3001:3000"
+    depends_on:
+      - auth-db
+
+  restaurant-db:
+    image: mysql:8.4
+    container_name: restaurant-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${RESTAURANT_MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${RESTAURANT_MYSQL_DATABASE}
+    ports:
+      - "3308:3306"
+    volumes:
+      - restaurant-db-data:/var/lib/mysql
+      - ./restaurant-service/sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+
+  restaurant-service:
+    build:
+      context: ./restaurant-service
+      dockerfile: dockerfile
+    container_name: restaurant-service
+    environment:
+      PORT: ${RESTAURANT_SERVICE_PORT}
+      DB_HOST: ${RESTAURANT_DB_HOST}
+      DB_PORT: ${RESTAURANT_DB_PORT}
+      DB_USER: ${RESTAURANT_DB_USER}
+      DB_PASSWORD: ${RESTAURANT_DB_PASSWORD}
+      DB_NAME: ${RESTAURANT_DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "3002:3000"
+    depends_on:
+      - restaurant-db
+
+volumes:
+  auth-db-data:
+  restaurant-db-data:

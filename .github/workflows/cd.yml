@@ -1,0 +1,138 @@
+name: CD - Deploy to AWS ECS
+
+on:
+  push:
+    branches:
+      - main
+      - production
+  workflow_run:
+    workflows: ["CI - Lint and Test"]
+    types:
+      - completed
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY_PREFIX: microservices
+
+jobs:
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+
+    strategy:
+      matrix:
+        service: [auth-service, user-service, restaurant-service]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY_PREFIX }}-${{ matrix.service }}
+          IMAGE_TAG: ${{ github.sha }}
+          LATEST_TAG: latest
+        run: |
+          # Build image
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./${{ matrix.service }}
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$LATEST_TAG
+          
+          # Push images
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$LATEST_TAG
+          
+          # Output image URI
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Update ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ./.github/ecs/${{ matrix.service }}-task-definition.json
+          container-name: ${{ matrix.service }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY_PREFIX }}-${{ matrix.service }}:${{ github.sha }}
+
+      - name: Deploy to Amazon ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ matrix.service }}-service
+          cluster: microservices-cluster
+          wait-for-service-stability: true
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ ${{ matrix.service }} deployed successfully to ECS"
+          else
+            echo "❌ ${{ matrix.service }} deployment failed"
+          fi
+
+  # Blue-Green Deployment Strategy
+  blue-green-deployment:
+    name: Blue-Green Deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/production'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Switch traffic to new version
+        run: |
+          # Get current task definition
+          CURRENT_TASK=$(aws ecs describe-services \
+            --cluster microservices-cluster \
+            --services auth-service-service \
+            --query 'services[0].taskDefinition' \
+            --output text)
+          
+          # Get the new task definition created by previous job
+          NEW_TASK=$(aws ecs list-task-definitions \
+            --family-prefix auth-service \
+            --sort DESCENDING \
+            --max-items 1 \
+            --query 'taskDefinitionArns[0]' \
+            --output text)
+          
+          # Update service with new task definition
+          aws ecs update-service \
+            --cluster microservices-cluster \
+            --service auth-service-service \
+            --task-definition $NEW_TASK \
+            --force-new-deployment
+          
+          echo "Switched from $CURRENT_TASK to $NEW_TASK"
+
+      - name: Verify deployment health
+        run: |
+          # Wait for service to stabilize
+          aws ecs wait services-stable \
+            --cluster microservices-cluster \
+            --services auth-service-service user-service-service restaurant-service-service
+          
+          echo "✅ All services are healthy and stable"

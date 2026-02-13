@@ -1,0 +1,43 @@
+{
+  "name": "boilerplate-nodejs-express",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "lint": "eslint .",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "jest": "^30.2.0",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.11.5",
+    "module-alias": "^2.2.3",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.2",
+    "eslint-plugin-import": "^2.32.0",
+    "nodemon": "^3.1.11",
+    "supertest": "^7.2.2"
+  }
+  ,
+  "jest": {
+    "testEnvironment": "node",
+    "roots": ["<rootDir>/tests"],
+    "moduleNameMapper": {
+      "^@controllers/(.*)$": "<rootDir>/src/controllers/$1",
+      "^@services/(.*)$": "<rootDir>/src/services/$1",
+      "^@repositories/(.*)$": "<rootDir>/src/repositories/$1",
+      "^@routes/(.*)$": "<rootDir>/src/routes/$1"
+    }
+  }
+}
