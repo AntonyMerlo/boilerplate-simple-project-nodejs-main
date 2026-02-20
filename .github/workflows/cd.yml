@@ -76,9 +76,9 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ matrix.service }}-service
+          service: ${{ matrix.service }}
           cluster: microservices-cluster
-          wait-for-service-stability: true
+          wait-for-service-stability: false
 
       - name: Notify deployment status
         if: always()
