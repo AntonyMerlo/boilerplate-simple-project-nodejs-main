@@ -16,7 +16,8 @@ app.use(routes);
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
 
 // Middleware de erro
-app.use((err, req, res, _next) => {
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
   const status = err.statusCode || 500;
   const message = err.message || 'Erro interno.';
   res.status(status).json({ message });

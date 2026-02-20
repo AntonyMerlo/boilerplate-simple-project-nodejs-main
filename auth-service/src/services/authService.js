@@ -70,7 +70,8 @@ const syncUserProfile = async ({ authUserId, name, email }) => {
       if (data?.message) {
         message = data.message;
       }
-    } catch (_err) {
+      // eslint-disable-next-line no-unused-vars
+    } catch (err) {
       // ignore parse errors
     }
     const error = new Error(message);
@@ -162,7 +163,8 @@ export const refreshToken = async (payload) => {
   let decoded;
   try {
     decoded = jwt.verify(value.token, JWT_SECRET);
-  } catch (_err) {
+    // eslint-disable-next-line no-unused-vars
+  } catch (err) {
     const errorObj = new Error('Refresh token inválido.');
     errorObj.statusCode = 401;
     throw errorObj;
@@ -212,7 +214,8 @@ export const getMe = async (userId) => {
 export const verifyAccessToken = (token) => {
   try {
     return jwt.verify(token, JWT_SECRET);
-  } catch (_err) {
+    // eslint-disable-next-line no-unused-vars
+  } catch (err) {
     const errorObj = new Error('Token inválido.');
     errorObj.statusCode = 401;
     throw errorObj;
