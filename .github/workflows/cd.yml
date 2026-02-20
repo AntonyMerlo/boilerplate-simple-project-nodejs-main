@@ -37,6 +37,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Substitute Account ID in task definition
+        run: |
+          sed -i 's/ACCOUNT_ID/${{ secrets.AWS_ACCOUNT_ID }}/g' ./.github/ecs/${{ matrix.service }}-task-definition.json
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -83,56 +87,3 @@ jobs:
           else
             echo "❌ ${{ matrix.service }} deployment failed"
           fi
-
-  # Blue-Green Deployment Strategy
-  blue-green-deployment:
-    name: Blue-Green Deployment
-    runs-on: ubuntu-latest
-    needs: deploy
-    if: github.ref == 'refs/heads/production'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Switch traffic to new version
-        run: |
-          # Get current task definition
-          CURRENT_TASK=$(aws ecs describe-services \
-            --cluster microservices-cluster \
-            --services auth-service-service \
-            --query 'services[0].taskDefinition' \
-            --output text)
-          
-          # Get the new task definition created by previous job
-          NEW_TASK=$(aws ecs list-task-definitions \
-            --family-prefix auth-service \
-            --sort DESCENDING \
-            --max-items 1 \
-            --query 'taskDefinitionArns[0]' \
-            --output text)
-          
-          # Update service with new task definition
-          aws ecs update-service \
-            --cluster microservices-cluster \
-            --service auth-service-service \
-            --task-definition $NEW_TASK \
-            --force-new-deployment
-          
-          echo "Switched from $CURRENT_TASK to $NEW_TASK"
-
-      - name: Verify deployment health
-        run: |
-          # Wait for service to stabilize
-          aws ecs wait services-stable \
-            --cluster microservices-cluster \
-            --services auth-service-service user-service-service restaurant-service-service
-          
-          echo "✅ All services are healthy and stable"
