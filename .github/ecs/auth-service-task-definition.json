@@ -26,6 +26,18 @@
           "value": "3000"
         },
         {
+          "name": "AUTH_SERVICE_URL",
+          "value": "http://98.81.192.86:3000"
+        },
+        {
+          "name": "USER_SERVICE_URL",
+          "value": "http://44.202.218.58:3001"
+        },
+        {
+          "name": "RESTAURANT_SERVICE_URL",
+          "value": "http://98.91.186.24:3002"
+        },
+        {
           "name": "DB_HOST",
           "value": "apidb.cgppmpvknxr2.us-east-1.rds.amazonaws.com"
         },

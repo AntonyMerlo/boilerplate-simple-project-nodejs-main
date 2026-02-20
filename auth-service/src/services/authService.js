@@ -13,7 +13,7 @@ import {
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
 const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
 const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:3001';
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://44.202.218.58:3001';
 
 const registerSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
