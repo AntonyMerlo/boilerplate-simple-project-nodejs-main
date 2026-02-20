@@ -27,15 +27,15 @@
         },
         {
           "name": "DB_HOST",
-          "value": "auth-db.internal"
+          "value": "apidb.cgppmpvknxr2.us-east-1.rds.amazonaws.com"
         },
         {
           "name": "DB_USER",
-          "value": "auth_user"
+          "value": "admin"
         },
         {
           "name": "DB_NAME",
-          "value": "auth_service"
+          "value": "api_db"
         },
         {
           "name": "DB_PORT",
@@ -45,11 +45,11 @@
       "secrets": [
         {
           "name": "DB_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:db-password"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:db-password-lrp8nR"
         },
         {
           "name": "JWT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:jwt-secret"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:jwt-secret-uJM8zw"
         }
       ],
       "logConfiguration": {
@@ -69,6 +69,6 @@
       }
     }
   ],
-  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole"
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/LabRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/LabRole"
 }
