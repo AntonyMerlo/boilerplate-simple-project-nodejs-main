@@ -58,6 +58,10 @@
         {
           "name": "DB_PASSWORD",
           "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:db-password-lrp8nR"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:jwt-secret-uJM8zw"
         }
       ],
       "logConfiguration": {
